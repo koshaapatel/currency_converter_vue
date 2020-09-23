@@ -41,17 +41,17 @@
 
         <button type="submit" @click.prevent="process" class="btn btn-primary">Submit</button>
       </form>
-      <!-- <h2 v-show="submitted" v-cloak class="mt-5">Thanks for signing up!</h2> -->
-      <div class="container" v-cloak v-show="submitted">
+      
+      <div class="container" v-cloak v-show="displaydata">
         <h2 class="mt-5">To : {{ currencychoice1 }}</h2>
         <h2 class="mt-5">From : {{ currencychoice2 }}</h2>
         <h2 class="mt-5">Amount : {{ number }}</h2>
-        <h2 class="mt-5">Conversion Rate : {{ conversionRate}}</h2>
-        <h2 class="mt-5">Converted Amount : {{ amount}}</h2>
+        <h2 class="mt-5">Conversion Rate : {{ conversionRate }}</h2>
+        <h2 class="mt-5">Converted Amount : {{ amount }}</h2>
       </div>
-      <!-- <div class="container" v-cloak v-show="!submitted">
+      <div class="container" v-cloak v-show="displayerror">
         <h2 class="mt-5">We can't process your request.</h2>
-      </div>-->
+      </div> 
     </div>
   </div>
 </template>
@@ -66,20 +66,9 @@ export default {
   },
   data: function() {
     return {
-      submitted: false,
-      currencychoice: [
-        "USD",
-        "EUR",
-        "JPY",
-        "GBP",
-        "AUD",
-        "CHF",
-        "CNY",
-        "HKD",
-        "MXN",
-        "INR",
-        "CAD"
-      ],
+      displaydata: false,
+      displayerror: false,
+      currencychoice: [],
       currencychoice1: "USD",
       currencychoice2: "CAD",
       date: "2020-09-02",
@@ -87,6 +76,25 @@ export default {
       conversionRate: 0,
       amount: 0
     };
+  },
+  created: function () {
+      var urltofetchcurrency = "https://www.bankofcanada.ca/valet/groups/FX_RATES_DAILY";
+      axios
+        .get(urltofetchcurrency)
+        .then(res => {
+            console.log(res);
+            //console.log(res.data.groupDetails.groupSeries[0].label);
+            let f = res.data.groupDetails.groupSeries;
+            for (var key in f){
+              let temp = f[key]["label"].replace('/',' ').replace('CAD','');
+              this.currencychoice.push(temp);
+            }
+            this.currencychoice.push("CAD");
+            this.currencychoice.sort();
+        })
+        .catch(e => {
+          console.log("Can't process your request." + e);
+        });
   },
   methods: {
     process: function() {
@@ -107,15 +115,15 @@ export default {
             this.amount = (
               parseFloat(this.conversionRate) * this.number
             ).toFixed(4);
-            this.submitted = true;
+            this.displaydata = true;
+            this.displayerror = false;
             // console.log(this.amount);
             // console.log(this.conversionRate);
           }
-          // else {
-          //   console.log(res.data);
-          // }
         })
         .catch(e => {
+          this.displaydata = false;
+          this.displayerror = true;
           console.log("Can't process your request." + e);
         });
     }
